@@ -30,9 +30,6 @@ public class Armazem {
     }
 
     private int buscarIndiceCorredor(String corredor) {
-        if (corredor == null || corredor.isBlank()) {
-            throw new IllegalArgumentException("Nome do corredor inválido.");
-        }
 
         String alvo = corredor.trim().toUpperCase();
 
