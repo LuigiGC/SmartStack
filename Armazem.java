@@ -1,40 +1,25 @@
 public class Armazem {
-    private Setor[][] setores;
-    private int linhas;
-    private int colunas;
+    private Pilha[] corredores;
+    private int quantidadeCorredores;
+    private int capacidadePorCorredor;
+    private int pausaMs;
 
-    public Armazem(int quantidadeCorredores, int prateleirasPorCorredor) {
-        this.linhas = quantidadeCorredores;
-        this.colunas = prateleirasPorCorredor;
-        this.setores = new Setor[linhas][colunas];
-        
-        inicializarArmazem();
-    }
+    public Armazem(int quantidadeCorredores, int capacidadePorCorredor) {
+        this.quantidadeCorredores = quantidadeCorredores;
+        this.capacidadePorCorredor = capacidadePorCorredor;
+        this.pausaMs = 2000;
+        this.corredores = new Pilha[quantidadeCorredores];
 
-    private void inicializarArmazem() {
-        for (int i = 0; i < linhas; i++) {
-            String nomeCorredor;
-
-            if (i < 26) {
-                nomeCorredor = String.valueOf((char) ('A' + i));
-            } else {
-                char primeiraLetra = (char) ('A' + (i / 26) - 1);
-                char segundaLetra = (char) ('A' + (i % 26));
-                nomeCorredor = "" + primeiraLetra + segundaLetra;
-            }
-
-            for (int j = 0; j < colunas; j++) {
-                setores[i][j] = new Setor(nomeCorredor, j + 1);
-            }
+        for (int i = 0; i < quantidadeCorredores; i++) {
+            corredores[i] = new Pilha(capacidadePorCorredor);
         }
     }
 
     private int buscarIndiceCorredor(String corredor) {
 
         String alvo = corredor.trim().toUpperCase();
-
-        for (int i = 0; i < linhas; i++) {
-            if (setores[i][0].getCorredor().equals(alvo)) {
+        for (int i = 0; i < quantidadeCorredores; i++) {
+            if (getNomeCorredor(i).equals(alvo)) {
                 return i;
             }
         }
@@ -42,39 +27,175 @@ public class Armazem {
         throw new IllegalArgumentException("Corredor " + alvo + " não encontrado.");
     }
 
-    public boolean corredorTemPrateleiraDisponivel(String corredor) {
-        int indiceCorredor = buscarIndiceCorredor(corredor);
+    private String getNomeCorredor(int indice) {
+        if (indice < 26) {
+            return String.valueOf((char) ('A' + indice));
+        }
 
-        for (int j = 0; j < colunas; j++) {
-            if (setores[indiceCorredor][j].estaDisponivel()) {
-                return true;
+        char primeiraLetra = (char) ('A' + (indice / 26) - 1);
+        char segundaLetra = (char) ('A' + (indice % 26));
+        return "" + primeiraLetra + segundaLetra;
+    }
+
+    private void pausaCurta() {
+        try {
+            Thread.sleep(pausaMs);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    public boolean corredorTemVaga(String corredor) {
+        int indice = buscarIndiceCorredor(corredor);
+        return !corredores[indice].estaCheia();
+    }
+
+    public boolean corredorEstaLotado(String corredor) {
+        return !corredorTemVaga(corredor);
+    }
+
+    public boolean placaJaExiste(String placa) {
+        if (placa == null || placa.isBlank()) {
+            return false;
+        }
+
+        String alvo = placa.trim().toUpperCase();
+        for (int i = 0; i < quantidadeCorredores; i++) {
+            String[] elementos = corredores[i].elementos();
+            for (String elemento : elementos) {
+                if (alvo.equals(elemento)) {
+                    return true;
+                }
             }
         }
 
         return false;
     }
 
-    public boolean corredorEstaLotado(String corredor) {
-        return !corredorTemPrateleiraDisponivel(corredor);
-    }
-
-    public String getEstrutura() {
-        StringBuilder estrutura = new StringBuilder();
-        estrutura.append("--- Estrutura do Armazém Criada ---\n");
-
-        for (int i = 0; i < linhas; i++) {
-            for (int j = 0; j < colunas; j++) {
-                estrutura.append("[")
-                    .append(setores[i][j].getCoordenadas())
-                    .append("] ");
-            }
-            estrutura.append("\n");
+    public String adicionarCarro(String corredor, String placa) {
+        if (placa == null || placa.isBlank()) {
+            return "Placa inválida.";
         }
 
-        return estrutura.toString();
+        String placaNormalizada = placa.trim().toUpperCase();
+        if (placaJaExiste(placaNormalizada)) {
+            return "Placa já cadastrada no estacionamento.";
+        }
+
+        int indice = buscarIndiceCorredor(corredor);
+        Pilha pilha = corredores[indice];
+        if (pilha.estaCheia()) {
+            return "Corredor " + getNomeCorredor(indice) + " está lotado.";
+        }
+
+        pilha.empilhar(placaNormalizada);
+        return "Carro " + placaNormalizada + " estacionado no corredor " + getNomeCorredor(indice) + ".";
     }
 
-    public Setor[][] getSetores() {
-        return setores;
+    public String removerCarro(String corredor, String placa) {
+        if (placa == null || placa.isBlank()) {
+            return "Placa inválida.";
+        }
+
+        int indice = buscarIndiceCorredor(corredor);
+        Pilha principal = corredores[indice];
+
+        if (principal.estaVazia()) {
+            return "Corredor " + getNomeCorredor(indice) + " está vazio.";
+        }
+
+        String placaNormalizada = placa.trim().toUpperCase();
+        Pilha auxiliar = new Pilha(capacidadePorCorredor);
+        boolean encontrado = false;
+
+        while (!principal.estaVazia()) {
+            String atual = principal.desempilhar();
+            System.out.println("Removendo carro " + atual + "...");
+            pausaCurta();
+
+            if (atual.equals(placaNormalizada)) {
+                encontrado = true;
+                break;
+            }
+
+            auxiliar.empilhar(atual);
+        }
+
+        while (!auxiliar.estaVazia()) {
+            String atual = auxiliar.desempilhar();
+            System.out.println("Recolocando carro " + atual + "...");
+            pausaCurta();
+            principal.empilhar(atual);
+        }
+
+        if (!encontrado) {
+            return "Placa " + placaNormalizada + " não encontrada no corredor " + getNomeCorredor(indice) + ".";
+        }
+
+        return "Carro " + placaNormalizada + " removido do corredor " + getNomeCorredor(indice) + ".";
+    }
+
+    public String buscarCarro(String placa) {
+        if (placa == null || placa.isBlank()) {
+            return "Placa inválida.";
+        }
+
+        String alvo = placa.trim().toUpperCase();
+        for (int i = 0; i < quantidadeCorredores; i++) {
+            String[] elementos = corredores[i].elementos();
+            for (int j = 0; j < elementos.length; j++) {
+                if (alvo.equals(elementos[j])) {
+                    int posicao = j + 1;
+                    int nivelDoTopo = elementos.length - j;
+                    return "Placa " + alvo + " está no corredor " + getNomeCorredor(i)
+                        + " (posição " + posicao + " da base, " + nivelDoTopo + " do topo).";
+                }
+            }
+        }
+
+        return "Placa " + alvo + " não encontrada.";
+    }
+
+    public String getStatusCorredores() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("--- Status dos Corredores ---\n");
+
+        for (int i = 0; i < quantidadeCorredores; i++) {
+            Pilha pilha = corredores[i];
+            builder.append("Corredor ")
+                .append(getNomeCorredor(i))
+                .append(" - ")
+                .append(pilha.tamanho())
+                .append("/")
+                .append(pilha.getCapacidade())
+                .append(pilha.estaCheia() ? " (Lotado)" : " (Disponível)")
+                .append("\n");
+        }
+
+        return builder.toString();
+    }
+
+    public String getCarrosNoCorredor(String corredor) {
+        int indice = buscarIndiceCorredor(corredor);
+        Pilha pilha = corredores[indice];
+        String[] elementos = pilha.elementos();
+
+        if (elementos.length == 0) {
+            return "Corredor " + getNomeCorredor(indice) + " está vazio.";
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("Carros no corredor ")
+            .append(getNomeCorredor(indice))
+            .append(" (base -> topo):\n");
+
+        for (int i = 0; i < elementos.length; i++) {
+            builder.append(i + 1)
+                .append(" - ")
+                .append(elementos[i])
+                .append("\n");
+        }
+
+        return builder.toString();
     }
 }
