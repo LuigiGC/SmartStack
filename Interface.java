@@ -73,7 +73,8 @@ public class Interface {
 
 	private void mostrarStatus() {
 		System.out.println(estacionamento.getStatusCorredores());
-		System.out.print("Deseja ver os carros de um corredor? (S/N): ");
+		System.out.println(estacionamento.getEstatisticasGerais());
+		System.out.print("\nDeseja ver os carros de um corredor? (S/N): ");
 		String resposta = scanner.nextLine().trim();
 		if (resposta.equalsIgnoreCase("S")) {
 			System.out.print("Digite o corredor: ");

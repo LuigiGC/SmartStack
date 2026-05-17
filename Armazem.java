@@ -16,6 +16,9 @@ public class Armazem {
     }
 
     private int buscarIndiceCorredor(String corredor) {
+        if (corredor == null || corredor.isBlank()) {
+            throw new IllegalArgumentException("Nome do corredor inválido.");
+        }
 
         String alvo = corredor.trim().toUpperCase();
         for (int i = 0; i < quantidadeCorredores; i++) {
@@ -197,5 +200,21 @@ public class Armazem {
         }
 
         return builder.toString();
+    }
+
+    public String getEstatisticasGerais() {
+        int totalVagas = quantidadeCorredores * capacidadePorCorredor;
+        int vagasUtilizadas = 0;
+        for (int i = 0; i < quantidadeCorredores; i++) {
+            vagasUtilizadas += corredores[i].tamanho();
+        }
+        double porcentagem = 0.0;
+        if (totalVagas > 0) {
+            porcentagem = ((double) vagasUtilizadas / totalVagas) * 100.0;
+        }
+        int vagasDisponiveis = totalVagas - vagasUtilizadas;
+        
+        return String.format("\n--- Vagas ---\nTotal de Vagas: %d\nVagas Utilizadas: %d\nVagas Disponíveis: %d\nPercentual de Lotação: %.2f%%", 
+                             totalVagas, vagasUtilizadas, vagasDisponiveis, porcentagem);
     }
 }
