@@ -1,2 +1,2 @@
-# LogiBrasil
-Projeto de administração de estoque
+# SmartStack
+Sistema de Gerenciamento de Estacionamento Vertical
