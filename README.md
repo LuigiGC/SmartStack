@@ -1,2 +1,2 @@
 # SmartStack
-Sistema de Gerenciamento de Estacionamento Vertical
+Sistema de Gerenciamento Estacionamento Vertical
